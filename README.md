@@ -76,19 +76,19 @@ This tells docker to copy 'cp' the midi-corpus.txt file to the chosen Container 
 Example:  
 `docker cp home/greatestusername/Downloads/midi/midi-corpus.txt c849b04dd3f8:root/torch-rnn/data/midi-corpus.txt`
 
-**Preprocess the midi-corpus in the docker container file using included script:**  
+**Preprocess the midi-corpus in the docker container using included script:**  
 
 `python scripts/preprocess.py --input_txt data/midi-corpus.txt --output_h5 data/midi-corpus.h5 --output_json data/midi-corpus.json`
 
 **Train a model using your new preprocessed corpus data**  
 (This will train using only the CPU which may be slow. For GPU processing install CUDA and use nvidia-docker instead of docker)
 
-`th train.lua -input_h5 data/midi-corpus.h5 -input_json data/midi-corpus.json -seq_length 900 -max_epochs 300 -checkpoint_name cv/pickacheckpointname`
+`th train.lua -input_h5 data/midi-corpus.h5 -input_json data/midi-corpus.json -seq_length 600 -max_epochs 300 -checkpoint_name cv/pickacheckpointname`
 
 Start training with 'train.lua' using the the h5 and json inputs you created in the last step.  
-The sequence_length of 900 ensures 900 characters are iterated over. This makes sure longer ABC notation pattern parameters are trained into the model (feel free to try other sizes).  
-The max_epoch 300 is an arbitrary number to make sure enough training generations are done (feel free to try other numbers)  
-The final option sets the checkpoint name prefix that every checkpoint will be named from in the cv/ folder  
+The 'sequence_length' of '600' ensures 600 characters are iterated over. This makes sure longer ABC notation pattern parameters are trained into the model (feel free to try other sizes).  
+The 'max_epoch' of '300' is an arbitrary number to make sure enough training generations are done. (feel free to try other numbers)  
+The final option sets the checkpoint name which will prefix every checkpoint file created in the cv/ folder  
 For more training options and full descriptions which may improve your training results see: https://github.com/jcjohnson/torch-rnn/blob/master/doc/flags.md#training
 
 Epochs should scroll by with a format similar to:  
@@ -113,18 +113,21 @@ After all epochs of training are done use the iteration with the lowest val_loss
 
 This will run the 'sample.lua' script over the checkpoint file in the 'cv/' directory named 'yourchosencheckpointname_11000.t7'  
 Telling the script to 'sample' (generate) some data with a 'temperature' (the amount of randomness between 0 and 1) of '0.71'  
-The 'start_text' of 'X: 1' (the start of an ABC notation pattern) will seed the data generation.  
+The 'start_text' of 'X: 1' (matching the start of an ABC notation pattern) will seed the data generation.  
 The sample output will be stopped at '9900' characters then routed '>' to a file named 'midioutput.txt'
 
 The file midioutput.txt contains the newly generated abc notation patterns.  
 If you view the file you should see NEW ABC patterns similar to the ABC notation example pattern shown earlier.
 
-**Copy the midioutput.txt file from the docker container to a local folder**
+**Copy the midioutput.txt file from the docker container to a local folder**  
+(This command should be typed in your host console not the docker torch-rnn console)
 
 `docker cp CONTAINERID:root/torch-rnn/midioutput.txt /host/path/to/copy/file/to/midioutput.txt`
 
 Example:  
 `docker cp c849b04dd3f8:root/torch-rnn/midioutput.txt /home/greatestusername/Downloads/lstm-midis/midioutput.txt`
+
+This will copy the generated midioutput.txt to the path indicated on your desktop.
 
 **Next: split the midioutput.txt**  
 Split the file at the start of each ABC pattern (denoted by "X:") to produce individual ABC pattern files with an .abc extension
@@ -132,8 +135,8 @@ Split the file at the start of each ABC pattern (denoted by "X:") to produce ind
 `awk '/X:/{z="M"++i".abc";}{print > z;}' midioutput.txt`
 
 Here 'awk' is searching 'midioutput.txt' for a pattern starting with 'X:' (the start of an .abc file header)  
-Each pattern starting with 'X:' creates an entry with the name M#.abc  
-The pattern awk has found is then routed '>' to 'z' which is equal to the newly named M#.abc file
+Each pattern starting with 'X:' makes 'z' equal to M#.abc  
+The pattern awk has found is then routed '>' into 'z' which is equal to the newly named M#.abc file
 
 The output of this command will create a number of files starting with "M", followed by the file number, and ending with an .abc extension in the same directory as your midioutput.txt file.
 
@@ -146,6 +149,6 @@ Example:
 
 This is the midi2abc step in reverse.
 
-You should now have a number of newly generated MIDI files roughly equal to the number of .abc files in the directory.
+You should now have a number of newly generated MIDI files roughly equal to the number of .abc files in the directory.  
 
 Enjoy your new MIDIs! Experiment with MIDIs other than drums! You can even run poems/books/etc through Torch-RNN to train other models! Generate all the things (as long as they are text based)!
